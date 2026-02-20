@@ -99,7 +99,7 @@ class SequenceProfilesComparator:
     def __init__(
         self,
         slice_config: SliceConfig,
-        scoring_method: Literal["jensen_shannon_divergence"],
+        scoring_method: Literal["jensen_shannon_divergence", "abs_delta_p", "delta_p"],
         aggregate_across_tasks_method: Literal["mean", "max", "min"] | None,
     ):
         self.slice_config = slice_config
@@ -112,6 +112,18 @@ class SequenceProfilesComparator:
             assert x.ndim == 2, x.shape  # (Tasks, Length)
 
             scores = jensen_shannon_divergence(x, y, reduction=None)
+
+        elif self.scoring_method == "abs_delta_p":
+            assert x.shape == y.shape, (x.shape, y.shape)
+            assert x.ndim == 2, x.shape  # (Tasks, Length)
+
+            scores = torch.abs(x - y)
+
+        elif self.scoring_method == "delta_p":
+            assert x.shape == y.shape, (x.shape, y.shape)
+            assert x.ndim == 2, x.shape  # (Tasks, Length)
+
+            scores = x - y
 
         else:
             raise ValueError(f"Unknown scoring method: {self.scoring_method}")
