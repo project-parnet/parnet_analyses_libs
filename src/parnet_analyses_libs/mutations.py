@@ -141,8 +141,8 @@ class SequenceProfilesComparator:
     def _aggregate(
         self,
         tensor: torch.Tensor,
-        aggregate_method: Literal["mean", "max", "min"] | None = None,
         keep_dim: bool,
+        aggregate_method: Literal["mean", "max", "min"] | None = None,
     ) -> torch.Tensor:
         #
         # NOTE: IN THIS SPECIFIC SITUATION (PARNET multi-task profile scoring)
