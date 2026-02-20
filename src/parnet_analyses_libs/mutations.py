@@ -153,16 +153,15 @@ class SequenceProfilesComparator:
         if aggregate_method is None:
             return tensor
 
+        elif aggregate_method == "mean":
+            tensor = torch.mean(tensor, dim=-1, keepdim=True)
+        elif aggregate_method == "max":
+            tensor = torch.max(tensor, dim=-1, keepdim=True).values
+        elif aggregate_method == "min":
+            tensor = torch.min(tensor, dim=-1, keepdim=True).values
+
         else:
-            raise NotImplementedError
-        # elif aggregate_method == "mean":
-        #    tensor = torch.mean(tensor, dim=-1, keepdim=True)
-        # elif aggregate_method == "max":
-        #    tensor = torch.max(tensor, dim=-1, keepdim=True).values
-        # elif aggregate_method == "min":
-        #    tensor = torch.min(tensor, dim=-1, keepdim=True).values
-        # else:
-        #    raise ValueError(f"Unknown aggregation function: {aggregate_method}")
+            raise ValueError(f"Unknown aggregation function: {aggregate_method}")
 
     def __call__(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         assert x.shape == y.shape, (x.shape, y.shape)
