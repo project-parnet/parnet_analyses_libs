@@ -30,7 +30,7 @@ dependencies = [
     "tensorflow-datasets==4.9.3",
     "pydantic >=2.11,<3.0",
     "pandera >=0.24,<1.0",
-    "torch >=2.5,<2.6",
+    "torch >=2.5",
     "more-itertools >=10.7,<11.0",
     "scikit-learn >=1.7.0,<1.8.0",
     "torchmetrics >=1.8.2,<2",
@@ -43,7 +43,7 @@ dependencies = [
 
 gpu = [
     "tensorflow[and-cuda] >=2.16,<2.17",
-    "torch >=2.5,<2.6",
+    "torch >=2.5",
 ]
 
 dev = [
