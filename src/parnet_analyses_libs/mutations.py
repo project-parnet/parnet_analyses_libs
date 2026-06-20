@@ -106,7 +106,13 @@ class SequenceEmbeddingComparator:
             return torch.cosine_similarity(x, y, dim=0)
 
         elif self.scoring_method == "cosine_distance":
-            return 1.0 - torch.cosine_similarity(x, y, dim=0)
+            sim = torch.cosine_similarity(x, y, dim=0)
+            assert (sim >= 0).all(), (
+                f"cosine_similarity has negative values (min={sim.min():.4f}); "
+                "cosine_distance = 1 - sim would exceed [0, 1]. "
+                "Check that embeddings are non-negative."
+            )
+            return 1.0 - sim
 
         else:
             raise ValueError(f"Unknown scoring method: {self.scoring_method}")
