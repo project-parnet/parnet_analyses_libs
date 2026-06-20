@@ -30,6 +30,61 @@ class SequenceEmbeddingComparatorParameters(BaseModel):
         return self
 
 
+def build_slice_config(cfg: dict, total_len: int, sequence_offset: int = 0) -> SliceConfig:
+    """Build SliceConfig from a YAML slice sub-block dict.
+
+    Args:
+        cfg: dict with keys: mode, half_width (or extend_left/extend_right), start, end.
+        total_len: full tensor length (L + sequence_offset).
+        sequence_offset: prefix tokens before the first nucleotide (0 for PARNET,
+            1 for RiNALMo CLS token). All cfg coordinates are SEQUENCE-relative
+            (position 0 = first nucleotide); tensor coords = seq_coord + sequence_offset.
+
+    Modes (case-insensitive):
+        FROM_CENTER  — symmetric or asymmetric window around sequence center.
+                       half_width is a shorthand for extend_left=extend_right=N.
+        ABSOLUTE     — sequence-relative [start, end); shifted by sequence_offset.
+        CLS_TOKEN    — prefix tokens [0:sequence_offset]; requires sequence_offset > 0.
+    """
+    mode    = cfg.get("mode", "FROM_CENTER").upper()
+    hw      = cfg.get("half_width")
+    ext_l   = cfg.get("extend_left",  hw if hw is not None else 0)
+    ext_r   = cfg.get("extend_right", hw if hw is not None else 0)
+    seq_len = total_len - sequence_offset
+
+    if mode == "CLS_TOKEN":
+        if sequence_offset == 0:
+            raise ValueError("CLS_TOKEN requires sequence_offset > 0")
+        return SliceConfig(
+            mode=SliceCoordinateSystem.ABSOLUTE, start=0, end=sequence_offset,
+            require_expected_slice_length=False,
+        )
+    if mode == "FROM_CENTER":
+        if sequence_offset == 0:
+            return SliceConfig(
+                mode=SliceCoordinateSystem.FROM_CENTER,
+                extend_left=ext_l, extend_right=ext_r,
+                require_expected_slice_length=False,
+            )
+        # With prefix tokens, FROM_CENTER on the raw tensor would land at the wrong
+        # position. Convert to ABSOLUTE using the correct sequence center.
+        center = sequence_offset + seq_len // 2
+        return SliceConfig(
+            mode=SliceCoordinateSystem.ABSOLUTE,
+            start=max(0, center - ext_l),
+            end=min(total_len, center + ext_r + 1),
+            require_expected_slice_length=False,
+        )
+    if mode == "ABSOLUTE":
+        return SliceConfig(
+            mode=SliceCoordinateSystem.ABSOLUTE,
+            start=cfg["start"] + sequence_offset,
+            end=cfg["end"] + sequence_offset,
+            require_expected_slice_length=False,
+        )
+    raise ValueError(f"Unsupported slice mode: {mode!r}")
+
+
 class SequenceEmbeddingComparator:
     """Class to compare two sequence embeddings using slicing and scoring methods."""
 
